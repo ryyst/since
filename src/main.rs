@@ -6,6 +6,9 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::process;
 
 // Available subcommand branches
+const YEARS: &str = "years";
+const MONTHS: &str = "months";
+const WEEKS: &str = "weeks";
 const DAYS: &str = "days";
 const HOURS: &str = "hours";
 const MINUTES: &str = "minutes";
@@ -13,35 +16,49 @@ const SECONDS: &str = "seconds";
 const BASE: &str = "NOT_SUBCMD";
 
 fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str) {
-    let mut difference = to.signed_duration_since(from);
-
-    if difference.num_seconds() < 0 {
-        // Swap times if value is in future. Never show negative numbers.
-        //
-        // NOTE: While this is breaking the semantics of `since` a bit, we'll allow it
-        // for better usability. You could basically just symlink `since` -> `until`.
-        difference = from.signed_duration_since(to);
-    }
+    let difference = to.signed_duration_since(from);
+    // NOTE:
+    // All values are printed in absolutes, as to not show negative number for values in
+    // future. While this is breaking the semantics of `since` a bit, we'll allow it for
+    // better usability. You could basically just symlink `since` -> `until`.
 
     match name {
+        YEARS => {
+            let year_diff = from.year() - to.year();
+            println!("{}", year_diff.abs());
+        }
+        MONTHS => {
+            // Individual typecasting is necessary to
+            // a) compile at all
+            // b) not panic from subtraction overflow
+            let from_month = from.month() as i32;
+            let to_month = to.month() as i32;
+
+            // TODO: Figure out if we want a more precise formula here.
+            let months: i32 = (from.year() - to.year()) * 12 + from_month - to_month;
+            println!("{}", months.abs());
+        }
+        WEEKS => {
+            println!("{}", difference.num_weeks().abs());
+        }
         DAYS => {
-            println!("{}", difference.num_days());
+            println!("{}", difference.num_days().abs());
         }
         HOURS => {
-            println!("{}", difference.num_hours());
+            println!("{}", difference.num_hours().abs());
         }
         MINUTES => {
-            println!("{}", difference.num_minutes());
+            println!("{}", difference.num_minutes().abs());
         }
         SECONDS => {
-            println!("{}", difference.num_seconds());
+            println!("{}", difference.num_seconds().abs());
         }
         _ => {
             // GUESS HERE
             let hours = difference.num_hours();
             let mins = difference.num_minutes() % 60;
 
-            println!("{:02}:{:02}", hours, mins);
+            println!("{:02}:{:02}", hours.abs(), mins.abs());
         }
     }
 }
@@ -115,12 +132,12 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
 
 fn main() {
     let from: Arg = Arg::with_name("from")
-        .help("How much time has passed since date or time")
+        .help("Start time or date.")
         .required(false)
         .index(1);
 
     let to: Arg = Arg::with_name("to")
-        .help("Use to set custom time range. Default is current datetime.")
+        .help("End time or date, for custom range. Default is current datetime.")
         .required(false)
         .index(2);
 
@@ -129,6 +146,8 @@ Fetch time difference between <from> and <to>.
 
 If no parameters are given, will return time since UNIX epoch.
 Missing <to> argument will always default to current date/time.
+
+All values are generally rounded down.
     ";
 
     let matches = App::new("since")
@@ -137,29 +156,48 @@ Missing <to> argument will always default to current date/time.
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)
+        .setting(AppSettings::DeriveDisplayOrder)
         .arg(&from)
         .arg(&to)
         .subcommand(
+            SubCommand::with_name(YEARS)
+                .about("Print the output in years")
+                .arg(&from)
+                .arg(&to),
+        )
+        .subcommand(
+            SubCommand::with_name(MONTHS)
+                .about("Print the output in months (approx)")
+                .arg(&from)
+                .arg(&to),
+        )
+        .subcommand(
+            SubCommand::with_name(WEEKS)
+                .about("Print the output in weeks (approx)")
+                .arg(&from)
+                .arg(&to),
+        )
+        .subcommand(
             SubCommand::with_name(DAYS)
-                .about("Return output in days")
+                .about("Print the output in days")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
             SubCommand::with_name(HOURS)
-                .about("Return output in hours")
+                .about("Print the output in hours")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
             SubCommand::with_name(MINUTES)
-                .about("Return output in minutes")
+                .about("Print the output in minutes")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
             SubCommand::with_name(SECONDS)
-                .about("Return output in seconds")
+                .about("Print the output in seconds")
                 .arg(&from)
                 .arg(&to),
         )
