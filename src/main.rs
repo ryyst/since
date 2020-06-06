@@ -8,7 +8,8 @@ use std::process;
 // Available subcommand branches
 const DAYS: &str = "days";
 const HOURS: &str = "hours";
-const MINS: &str = "minutes";
+const MINUTES: &str = "minutes";
+const SECONDS: &str = "seconds";
 const BASE: &str = "NOT_SUBCMD";
 
 fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str) {
@@ -29,8 +30,11 @@ fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str)
         HOURS => {
             println!("{}", difference.num_hours());
         }
-        MINS => {
+        MINUTES => {
             println!("{}", difference.num_minutes());
+        }
+        SECONDS => {
+            println!("{}", difference.num_seconds());
         }
         _ => {
             // GUESS HERE
@@ -47,7 +51,7 @@ fn print_formatted_epoch(subcmd: &str) {
     match subcmd {
         DAYS => println!("{}", epoch / 60 / 60 / 24),
         HOURS => println!("{}", epoch / 60 / 60),
-        MINS => println!("{}", epoch / 60),
+        MINUTES => println!("{}", epoch / 60),
         _ => println!("{}", epoch),
     }
 }
@@ -129,7 +133,7 @@ Missing <to> argument will always default to current date/time.
 
     let matches = App::new("since")
         .about(about)
-        .version("v0.7")
+        .version("v0.8")
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)
@@ -148,8 +152,14 @@ Missing <to> argument will always default to current date/time.
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(MINS)
+            SubCommand::with_name(MINUTES)
                 .about("Return output in minutes")
+                .arg(&from)
+                .arg(&to),
+        )
+        .subcommand(
+            SubCommand::with_name(SECONDS)
+                .about("Return output in seconds")
                 .arg(&from)
                 .arg(&to),
         )
