@@ -57,7 +57,7 @@ fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str)
             println!("{}", difference.num_seconds().abs());
         }
         _ => {
-            // GUESS HERE
+            // TODO: Format guessing here, for nicer shorthand usage.
             let hours = difference.num_hours();
             let mins = difference.num_minutes() % 60;
 
@@ -117,7 +117,7 @@ All values are generally rounded down.
 
     let matches = App::new("since")
         .about(about)
-        .version("v0.8")
+        .version("v0.9")
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)
