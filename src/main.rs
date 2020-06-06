@@ -1,32 +1,50 @@
 extern crate chrono;
 extern crate clap;
 
-use chrono::{DateTime, Datelike, Local, NaiveTime, TimeZone, Timelike};
-use clap::{App, Arg, ArgMatches, SubCommand};
+use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveTime, ParseError, TimeZone, Timelike};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::process;
 
+// Available subcommand branches
 const DAYS: &str = "days";
 const HOURS: &str = "hours";
 const MINS: &str = "minutes";
 const BASE: &str = "NOT_SUBCMD";
 
-fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>) {
-    let difference = to.signed_duration_since(from);
+fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str) {
+    let mut difference = to.signed_duration_since(from);
 
     if difference.num_seconds() < 0 {
-        println!("TODO: No future values allowed yet.");
-        process::exit(1);
+        // Swap times if value is in future. Never show negative numbers.
+        //
+        // NOTE: While this is breaking the semantics of `since` a bit, we'll allow it
+        // for better usability. You could basically just symlink `since` -> `until`.
+        difference = from.signed_duration_since(to);
     }
 
-    let hours = difference.num_hours();
-    let mins = difference.num_minutes() % 60;
+    match name {
+        DAYS => {
+            println!("{}", difference.num_days());
+        }
+        HOURS => {
+            println!("{}", difference.num_hours());
+        }
+        MINS => {
+            println!("{}", difference.num_minutes());
+        }
+        _ => {
+            // GUESS HERE
+            let hours = difference.num_hours();
+            let mins = difference.num_minutes() % 60;
 
-    println!("{:02}:{:02}", hours, mins);
+            println!("{:02}:{:02}", hours, mins);
+        }
+    }
 }
 
-fn fancy_print_epoch(cmd_name: &str) {
+fn print_formatted_epoch(subcmd: &str) {
     let epoch = Local::now().timestamp();
-    match cmd_name {
+    match subcmd {
         DAYS => println!("{}", epoch / 60 / 60 / 24),
         HOURS => println!("{}", epoch / 60 / 60),
         MINS => println!("{}", epoch / 60),
@@ -34,37 +52,61 @@ fn fancy_print_epoch(cmd_name: &str) {
     }
 }
 
-fn try_parse_time(arg: &str, now: &DateTime<Local>) -> DateTime<Local> {
-    match NaiveTime::parse_from_str(&arg, "%H:%M") {
-        Ok(val) => {
-            Local
-                .ymd(now.year(), now.month(), now.day())
-                .and_hms(val.hour(), val.minute(), 0)
-        }
-        Err(_err) => {
-            println!("TODO: %Y-%M-%D");
+/// Eager datetime parsing for given arguments, testing multiple date and time formats and only
+/// quitting if absolutely nothing matches.
+fn try_parse_arg(arg: &str, now: &DateTime<Local>) -> DateTime<Local> {
+    match try_parse_times(arg, &now).or_else(|_err| try_parse_dates(arg, &now)) {
+        Ok(val) => val,
+        Err(err) => {
+            println!("Unable to parse `{}` into datetime: {}.", arg, err);
             process::exit(1);
         }
     }
 }
 
-fn handle_args(name: &str, matches: &ArgMatches) {
+/// Tries to parse given argument through multiple different time formats and format a locale-aware
+/// current datetime using given `now`.
+fn try_parse_times(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, ParseError> {
+    NaiveTime::parse_from_str(&arg, "%T")
+        .or_else(|_err| NaiveTime::parse_from_str(&arg, "%R"))
+        .and_then(|val| {
+            Ok(Local.ymd(now.year(), now.month(), now.day()).and_hms(
+                val.hour(),
+                val.minute(),
+                val.second(),
+            ))
+        })
+}
+
+/// Tries to parse given argument through multiple different date formats and format a locale-aware
+/// current datetime using given `now`.
+fn try_parse_dates(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, ParseError> {
+    NaiveDate::parse_from_str(&arg, "%F").and_then(|val| {
+        Ok(Local.ymd(val.year(), val.month(), val.day()).and_hms(
+            now.hour(),
+            now.minute(),
+            now.second(),
+        ))
+    })
+}
+
+fn handle_args(subcmd: &str, matches: &ArgMatches) {
     let now = Local::now();
 
     let from: DateTime<Local> = match matches.value_of("from") {
-        Some(val) => try_parse_time(val, &now),
+        Some(val) => try_parse_arg(val, &now),
         None => {
-            fancy_print_epoch(name);
-            process::exit(1);
+            print_formatted_epoch(subcmd);
+            process::exit(0);
         }
     };
 
     let to: DateTime<Local> = match matches.value_of("to") {
-        Some(val) => try_parse_time(val, &now),
+        Some(val) => try_parse_arg(val, &now),
         None => now,
     };
 
-    print_time_difference(from, to);
+    print_time_difference(from, to, subcmd);
 }
 
 fn main() {
@@ -78,8 +120,19 @@ fn main() {
         .required(false)
         .index(2);
 
+    let about = "
+Fetch time difference between <from> and <to>.
+
+If no parameters are given, will return time since UNIX epoch.
+Missing <to> argument will always default to current date/time.
+    ";
+
     let matches = App::new("since")
-        .about("Fetch time difference")
+        .about(about)
+        .version("v0.7")
+        .setting(AppSettings::InferSubcommands)
+        .setting(AppSettings::VersionlessSubcommands)
+        .setting(AppSettings::DisableHelpSubcommand)
         .arg(&from)
         .arg(&to)
         .subcommand(
@@ -103,7 +156,7 @@ fn main() {
         .get_matches();
 
     match matches.subcommand() {
-        (name, Some(sub_matches)) => handle_args(name, sub_matches),
+        (subcmd, Some(sub_matches)) => handle_args(subcmd, sub_matches),
         _ => handle_args(BASE, &matches),
     }
 }
