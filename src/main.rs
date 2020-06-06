@@ -4,7 +4,7 @@ extern crate clap;
 mod parsers;
 
 use crate::parsers::parse_arg_or_exit;
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, TimeZone};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::process;
 
@@ -18,28 +18,35 @@ const MINUTES: &str = "minutes";
 const SECONDS: &str = "seconds";
 const BASE: &str = "NOT_SUBCMD";
 
-fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str) {
+fn calculate_month_diff(from: &DateTime<Local>, to: &DateTime<Local>) -> i32 {
+    // Individual typecasting is necessary to
+    // a) compile at all
+    // b) not panic from subtraction overflow
+    let from_month = from.month() as i32;
+    let to_month = to.month() as i32;
+
+    // TODO: Figure out if we want a more precise formula here.
+    ((from.year() - to.year()) * 12 + from_month - to_month).abs()
+}
+
+/// Print the requested `from` and `to` arguments according to the chosen subcommand.
+///
+/// If no subcommand is chosen, guess which is the best format for humans to read
+/// for the given time range.
+fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, subcmd: &str) {
     let difference = to.signed_duration_since(from);
     // NOTE:
     // All values are printed in absolutes, as to not show negative number for values in
     // future. While this is breaking the semantics of `since` a bit, we'll allow it for
     // better usability. You could basically just symlink `since` -> `until`.
 
-    match name {
+    match subcmd {
         YEARS => {
             let year_diff = from.year() - to.year();
             println!("{}", year_diff.abs());
         }
         MONTHS => {
-            // Individual typecasting is necessary to
-            // a) compile at all
-            // b) not panic from subtraction overflow
-            let from_month = from.month() as i32;
-            let to_month = to.month() as i32;
-
-            // TODO: Figure out if we want a more precise formula here.
-            let months: i32 = (from.year() - to.year()) * 12 + from_month - to_month;
-            println!("{}", months.abs());
+            println!("{}", calculate_month_diff(&from, &to));
         }
         WEEKS => {
             println!("{}", difference.num_weeks().abs());
@@ -66,9 +73,25 @@ fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, name: &str)
     }
 }
 
-fn print_formatted_epoch(subcmd: &str) {
+/// Print the UNIX timestamp according to the chosen subcommand.
+fn print_formatted_epoch(subcmd: &str, now: DateTime<Local>) {
     let epoch = Local::now().timestamp();
+    let epoch_date = Local.ymd(1970, 1, 1).and_hms(0, 0, 0);
+
     match subcmd {
+        // Epoch days are always statically 86400 seconds long.
+        // Thus the following calculations are just "close enough" approximations
+        YEARS => {
+            println!("{}", (1970 - now.year()).abs());
+        }
+        MONTHS => {
+            println!("{}", calculate_month_diff(&epoch_date, &now));
+        }
+        WEEKS => {
+            let difference = epoch_date.signed_duration_since(now);
+            println!("{}", difference.num_weeks().abs())
+        }
+        // ...and these naive calculations should actually be 100% correct
         DAYS => println!("{}", epoch / 60 / 60 / 24),
         HOURS => println!("{}", epoch / 60 / 60),
         MINUTES => println!("{}", epoch / 60),
@@ -82,7 +105,7 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
     let from: DateTime<Local> = match matches.value_of("from") {
         Some(val) => parse_arg_or_exit(val, &now),
         None => {
-            print_formatted_epoch(subcmd);
+            print_formatted_epoch(subcmd, now);
             process::exit(0);
         }
     };
@@ -117,7 +140,7 @@ All values are generally rounded down.
 
     let matches = App::new("since")
         .about(about)
-        .version("v0.9")
+        .version("v0.9.1")
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)
