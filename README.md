@@ -3,9 +3,9 @@
 Since what?
 
 ```
-23:19:53 risto@GALACTICA /home/risto>
-↪ since 15:00
-08:20
+14:30:29 risto@GALACTICA /home/risto>
+↪ since 13:00
+1 hours and 30 minutes
 ```
 
 
@@ -131,6 +131,9 @@ Now you can find the binary in `./target/release/since`
 
 ## Todo
 
-- Format guessing for basemode
 - Tests
 - Improve documentation
+- More accurate year/month calculations
+- A flag for decimal output
+- Exhaustive time fractions for the "guessed" output
+  - eg. "1 years, 2 months, 3 days, 5 hours and 15 minutes"

@@ -4,7 +4,7 @@ extern crate clap;
 mod parsers;
 
 use crate::parsers::parse_arg_or_exit;
-use chrono::{DateTime, Datelike, Local, TimeZone};
+use chrono::{DateTime, Datelike, Duration, Local, TimeZone};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::process;
 
@@ -29,6 +29,43 @@ fn calculate_month_diff(from: &DateTime<Local>, to: &DateTime<Local>) -> i32 {
     ((from.year() - to.year()) * 12 + from_month - to_month).abs()
 }
 
+fn calculate_year_diff(from: &DateTime<Local>, to: &DateTime<Local>) -> i32 {
+    // TODO: Figure out if we want a more precise formula here.
+    (from.year() - to.year()).abs()
+}
+
+/// Print the time difference for shorthand use.
+///
+/// Does some basic guessing on which format is the nicest for user to read.
+fn print_shorthand_format(from: DateTime<Local>, to: DateTime<Local>, difference: Duration) {
+    // TODO: Clean this up and add "and"-clauses to every option, like in hours/minutes now.
+    let days = difference.num_days().abs();
+    match days {
+        // About two months to about two years
+        63..=730 => {
+            println!("{} months", calculate_month_diff(&from, &to));
+        }
+        // Two days to about two months
+        2..=62 => {
+            println!("{} days", difference.num_days().abs());
+        }
+        0..=1 => {
+            let hours = difference.num_hours();
+            let mins = difference.num_minutes() % 60;
+
+            // TODO: Seconds
+            if hours == 0 {
+                println!("{} minutes", mins.abs());
+            } else {
+                println!("{} hours and {} minutes", hours.abs(), mins.abs());
+            }
+        }
+        _ => {
+            println!("{} years", calculate_year_diff(&from, &to));
+        }
+    }
+}
+
 /// Print the requested `from` and `to` arguments according to the chosen subcommand.
 ///
 /// If no subcommand is chosen, guess which is the best format for humans to read
@@ -42,8 +79,7 @@ fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, subcmd: &st
 
     match subcmd {
         YEARS => {
-            let year_diff = from.year() - to.year();
-            println!("{}", year_diff.abs());
+            println!("{}", calculate_year_diff(&from, &to));
         }
         MONTHS => {
             println!("{}", calculate_month_diff(&from, &to));
@@ -64,11 +100,7 @@ fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, subcmd: &st
             println!("{}", difference.num_seconds().abs());
         }
         _ => {
-            // TODO: Format guessing here, for nicer shorthand usage.
-            let hours = difference.num_hours();
-            let mins = difference.num_minutes() % 60;
-
-            println!("{:02}:{:02}", hours.abs(), mins.abs());
+            print_shorthand_format(from, to, difference);
         }
     }
 }
@@ -139,7 +171,7 @@ All values are generally rounded down.";
 
     let matches = App::new("since")
         .about(about)
-        .version("v0.10")
+        .version("v0.11")
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)
