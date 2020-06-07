@@ -135,8 +135,7 @@ Fetch time difference between <from> and <to>.
 If no parameters are given, will return time since UNIX epoch.
 Missing <to> argument will always default to current date/time.
 
-All values are generally rounded down.
-    ";
+All values are generally rounded down.";
 
     let matches = App::new("since")
         .about(about)
@@ -149,7 +148,7 @@ All values are generally rounded down.
         .arg(&to)
         .subcommand(
             SubCommand::with_name(YEARS)
-                .about("Print the output in years")
+                .about("Print the output in years (approx)")
                 .arg(&from)
                 .arg(&to),
         )
