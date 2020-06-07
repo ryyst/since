@@ -139,7 +139,7 @@ All values are generally rounded down.";
 
     let matches = App::new("since")
         .about(about)
-        .version("v0.9.1")
+        .version("v0.10")
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)

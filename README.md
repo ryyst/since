@@ -47,21 +47,37 @@ SUBCOMMANDS:
 
 ## Supported date & time formats
 
+All formats are hard-coded and chosen with the loose criteria of "what makes sense", the goal is to be
+intuitive, not exhaustive (yet).
+
+### Time
 - `HH:MM`
 - `HH:MM:SS`
+
+### Date
 - `YYYY-MM-DD`
+- `YYYY/MM/DD`
+- `YYYY.MM.DD`
 - `DD-MM-YYYY`
+- `DD/MM/YYYY`
+- `DD.MM.YYYY`
+- `DD MONTH YYYY` (eg. Dec or December)
+- `YYYY MONTH DD`
+
+### Datetime
+- `[date] [time]`
+- `[date]T[time]`
 
 
-**Notes:**
+## Notes on functionality
 
-- Date formats support separators `-`, `/` and `.`.
-- `December` and `Dec` are also valid formats in place of month.
 - In spite of holy UI semantics, future values are also supported. All values are always absolute
   *distances*, thus no negative values should ever appear.
 - All output (especially weeks/months/years) should generally be treated as "intuitive approximations",
   due to ambiguity in the definition of `when has 1 $time_unit passed`.
 - All calculations are done in the local system's timezone
+- Space-separated parameters must *always* be wrapped in quotes
+- All naive times (eg. 12:15) are always intepreted as "today"
 
 
 ## Examples
@@ -116,6 +132,5 @@ Now you can find the binary in `./target/release/since`
 ## Todo
 
 - Format guessing for basemode
-- Datetime format
 - Tests
 - Improve documentation

@@ -4,8 +4,10 @@ use std::process;
 /// Eager datetime parsing for given arguments, testing multiple date and time formats and only
 /// quitting if absolutely nothing matches.
 pub fn parse_arg_or_exit(arg: &str, now: &DateTime<Local>) -> DateTime<Local> {
-    // TODO: Entire ISO 8601 / RFC 3339 date & time format
-    match try_parse_times(arg, &now).or_else(|_err| try_parse_dates(arg, &now)) {
+    match try_parse_times(arg, &now)
+        .or_else(|_err| try_parse_dates(arg, &now))
+        .or_else(|_err| try_parse_datetimes(arg))
+    {
         Ok(val) => val,
         Err(err) => {
             println!("Unable to parse `{}` into datetime: {}.", arg, err);
@@ -38,12 +40,8 @@ fn try_parse_dates(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, 
         .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d-%m-%Y"))
         .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d/%m/%Y"))
         .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d.%m.%Y"))
-        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%Y-%B-%d")) // %B == July || Jul
-        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%Y/%B/%d"))
-        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%Y.%B.%d"))
-        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d-%B-%Y"))
-        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d/%B/%Y"))
-        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d.%B.%Y"))
+        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%Y %B %d")) // %B == July || Jul
+        .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d %B %Y"))
         .and_then(|val| {
             Ok(Local.ymd(val.year(), val.month(), val.day()).and_hms(
                 now.hour(),
@@ -51,4 +49,47 @@ fn try_parse_dates(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, 
                 now.second(),
             ))
         })
+}
+
+/// Tries to parse given argument through multiple different datetime formats and create a
+/// locale-aware current datetime in the current system timezone.
+fn try_parse_datetimes(arg: &str) -> Result<DateTime<Local>, ParseError> {
+    // For reference, full rfc3339: "Wed, 18 Feb 2015 23:16:09 GMT"
+    // TODO: Figure out if we could somehow "build" all the allowed formats a bit more nicely.
+    Local
+        // Month name
+        .datetime_from_str(&arg, "%d %B %Y %H:%M:%S")
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y %B %d %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d %B %Y %H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y %B %d %H:%M"))
+        // Dashes
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y-%m-%d %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y-%m-%d %H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d-%m-%Y %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d-%m-%Y %H:%M"))
+        // Dots
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y.%m.%d %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y.%m.%d %H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d.%m.%Y %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d.%m.%Y %H:%M"))
+        // Slashes
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y/%m/%d %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y/%m/%d %H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d/%m/%Y %H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d/%m/%Y %H:%M"))
+        // Dashes, dots & slashes, but with a T
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y-%m-%dT%H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y-%m-%dT%H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d-%m-%YT%H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d-%m-%YT%H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y.%m.%dT%H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y.%m.%dT%H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d.%m.%YT%H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d.%m.%YT%H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y/%m/%dT%H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%Y/%m/%dT%H:%M"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d/%m/%YT%H:%M:%S"))
+        .or_else(|_err| Local.datetime_from_str(&arg, "%d/%m/%YT%H:%M"))
+
+    // TODO: All of the above, but with reverse date & time..?
 }
