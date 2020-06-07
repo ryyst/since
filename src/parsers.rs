@@ -10,7 +10,7 @@ pub fn parse_arg_or_exit(arg: &str, now: &DateTime<Local>) -> DateTime<Local> {
     {
         Ok(val) => val,
         Err(err) => {
-            println!("Unable to parse `{}` into datetime: {}.", arg, err);
+            eprintln!("Unable to parse `{}` into datetime: {}.", arg, err);
             process::exit(1);
         }
     }
