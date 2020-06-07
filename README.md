@@ -13,18 +13,20 @@ Since what?
 
 ```
 ↪ since -h
-since v0.9
+since v0.11.0
 
 Fetch time difference between <from> and <to>.
 
 If no parameters are given, will return time since UNIX epoch.
-Missing <to> argument will always default to current date/time.
+Missing <to> argument will always default to current datetime.
+All subcommands share exactly the same functionality and arguments as base
+command, just filtering the output to different format.
 
 All values are generally rounded down.
 
-
 USAGE:
-    since [ARGS] [SUBCOMMAND]
+    since [ARGS]
+    since <SUBCOMMAND>
 
 FLAGS:
     -h, --help       Prints help information

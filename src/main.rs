@@ -165,17 +165,20 @@ fn main() {
 Fetch time difference between <from> and <to>.
 
 If no parameters are given, will return time since UNIX epoch.
-Missing <to> argument will always default to current date/time.
+Missing <to> argument will always default to current datetime.
+All subcommands share exactly the same functionality and arguments as base
+command, just filtering the output to different format.
 
 All values are generally rounded down.";
 
     let matches = App::new("since")
         .about(about)
-        .version("v0.11")
+        .version("v0.11.0")
         .setting(AppSettings::InferSubcommands)
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::DisableHelpSubcommand)
         .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::ArgsNegateSubcommands)
         .arg(&from)
         .arg(&to)
         .subcommand(
