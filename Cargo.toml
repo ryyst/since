@@ -1,10 +1,15 @@
 [package]
 name = "since"
-version = "0.1.0"
+version = "0.11.0"
 authors = ["Risto Puolakainen <rpuolak@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT OR Apache-2.0"
+description = "Small CLI utility to calculate time differences, with semantic UI for humans"
+readme = "README.md"
+homepage = "https://github.com/ryyst/since"
+repository = "https://github.com/ryyst/since"
+keywords = ["cli", "time", "date", "datetime", "duration", "difference"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 chrono = "0.4"
