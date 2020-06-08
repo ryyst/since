@@ -84,24 +84,32 @@ intuitive, not exhaustive (yet).
 
 ## Examples
 
-```
+```sh
 ↪ date
-Sun  7 Jun 10:25:58 EEST 2020
+Mon  8 Jun 10:12:14 EEST 2020
 
-↪ since 9:00
-01:26
+# The original usecase, shorthand time calculations
+↪ since 7:00
+3 hours and 12 minutes
 
-↪ since hours 9:00
-1
+↪ since 24.12.2019
+6 months
 
-↪ since minutes 9:00
-86
+↪ since 24-12-2012T16:00:00
+8 years
 
-↪ since days 9:00
+# Explicit time output formats
+↪ since hours 7:00
+3
+
+↪ since minutes 7:00
+192
+
+↪ since days 7:00
 0
 
 ↪ since days 24.12.2019
-165
+166
 
 ↪ since months 24.12.2019
 6
@@ -109,11 +117,20 @@ Sun  7 Jun 10:25:58 EEST 2020
 ↪ since years 24.12.2002
 18
 
+# Custom time ranges with explicit second parameter
+↪ since minutes 14:00 23:45
+585
+
+# Mixing parameter formats
+↪ since hours "24 December 2019 18:15:30" 2020-6-20
+4286
+
+# Unix epochs
 ↪ since
-1591514892
+1591600334
 
 ↪ since minutes
-26525248
+26526672
 
 ↪ since years
 50
