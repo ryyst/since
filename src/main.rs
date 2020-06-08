@@ -1,6 +1,6 @@
 mod parsers;
 
-use crate::parsers::parse_arg_or_exit;
+use crate::parsers::try_parse_all_formats;
 use chrono::{DateTime, Datelike, Duration, Local, TimeZone};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::process;
@@ -132,7 +132,13 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
     let now = Local::now();
 
     let from: DateTime<Local> = match matches.value_of("from") {
-        Some(val) => parse_arg_or_exit(val, now),
+        Some(arg) => match try_parse_all_formats(arg, now) {
+            Ok(datetime) => datetime,
+            Err(err) => {
+                eprintln!("Unable to parse FROM arg `{}` into datetime: {}.", arg, err);
+                process::exit(1);
+            }
+        },
         None => {
             print_formatted_epoch(subcmd, now);
             process::exit(0);
@@ -140,7 +146,13 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
     };
 
     let to: DateTime<Local> = match matches.value_of("to") {
-        Some(val) => parse_arg_or_exit(val, now),
+        Some(arg) => match try_parse_all_formats(arg, now) {
+            Ok(datetime) => datetime,
+            Err(err) => {
+                eprintln!("Unable to parse TO arg `{}` into datetime: {}.", arg, err);
+                process::exit(1);
+            }
+        },
         None => now,
     };
 
