@@ -54,7 +54,9 @@ fn try_parse_dates(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, 
 /// Tries to parse given argument through multiple different datetime formats and create a
 /// locale-aware current datetime in the current system timezone.
 fn try_parse_datetimes(arg: &str) -> Result<DateTime<Local>, ParseError> {
-    // For reference, full rfc3339: "Wed, 18 Feb 2015 23:16:09 GMT"
+    // For reference, full RFC 2822:  1 Jul 2003 10:52:37 +0200
+    // and full RFC 3339 / ISO 8601:  1996-12-19T16:39:57-08:00
+
     // TODO: Figure out if we could somehow "build" all the allowed formats a bit more nicely.
     Local
         // Month name

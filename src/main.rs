@@ -1,6 +1,3 @@
-extern crate chrono;
-extern crate clap;
-
 mod parsers;
 
 use crate::parsers::parse_arg_or_exit;
