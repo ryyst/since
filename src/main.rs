@@ -15,7 +15,7 @@ const MINUTES: &str = "minutes";
 const SECONDS: &str = "seconds";
 const BASE: &str = "NOT_SUBCMD";
 
-fn calculate_month_diff(from: &DateTime<Local>, to: &DateTime<Local>) -> i32 {
+fn calculate_month_diff(from: DateTime<Local>, to: DateTime<Local>) -> i32 {
     // Individual typecasting is necessary to
     // a) compile at all
     // b) not panic from subtraction overflow
@@ -26,7 +26,7 @@ fn calculate_month_diff(from: &DateTime<Local>, to: &DateTime<Local>) -> i32 {
     ((from.year() - to.year()) * 12 + from_month - to_month).abs()
 }
 
-fn calculate_year_diff(from: &DateTime<Local>, to: &DateTime<Local>) -> i32 {
+fn calculate_year_diff(from: DateTime<Local>, to: DateTime<Local>) -> i32 {
     // TODO: Figure out if we want a more precise formula here.
     (from.year() - to.year()).abs()
 }
@@ -40,7 +40,7 @@ fn print_shorthand_format(from: DateTime<Local>, to: DateTime<Local>, difference
     match days {
         // About two months to about two years
         63..=730 => {
-            println!("{} months", calculate_month_diff(&from, &to));
+            println!("{} months", calculate_month_diff(from, to));
         }
         // Two days to about two months
         2..=62 => {
@@ -58,7 +58,7 @@ fn print_shorthand_format(from: DateTime<Local>, to: DateTime<Local>, difference
             }
         }
         _ => {
-            println!("{} years", calculate_year_diff(&from, &to));
+            println!("{} years", calculate_year_diff(from, to));
         }
     }
 }
@@ -76,10 +76,10 @@ fn print_time_difference(from: DateTime<Local>, to: DateTime<Local>, subcmd: &st
 
     match subcmd {
         YEARS => {
-            println!("{}", calculate_year_diff(&from, &to));
+            println!("{}", calculate_year_diff(from, to));
         }
         MONTHS => {
-            println!("{}", calculate_month_diff(&from, &to));
+            println!("{}", calculate_month_diff(from, to));
         }
         WEEKS => {
             println!("{}", difference.num_weeks().abs());
@@ -114,7 +114,7 @@ fn print_formatted_epoch(subcmd: &str, now: DateTime<Local>) {
             println!("{}", (1970 - now.year()).abs());
         }
         MONTHS => {
-            println!("{}", calculate_month_diff(&epoch_date, &now));
+            println!("{}", calculate_month_diff(epoch_date, now));
         }
         WEEKS => {
             let difference = epoch_date.signed_duration_since(now);
@@ -132,7 +132,7 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
     let now = Local::now();
 
     let from: DateTime<Local> = match matches.value_of("from") {
-        Some(val) => parse_arg_or_exit(val, &now),
+        Some(val) => parse_arg_or_exit(val, now),
         None => {
             print_formatted_epoch(subcmd, now);
             process::exit(0);
@@ -140,7 +140,7 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
     };
 
     let to: DateTime<Local> = match matches.value_of("to") {
-        Some(val) => parse_arg_or_exit(val, &now),
+        Some(val) => parse_arg_or_exit(val, now),
         None => now,
     };
 

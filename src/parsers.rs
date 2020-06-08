@@ -3,7 +3,7 @@ use std::process;
 
 /// Eager datetime parsing for given arguments, testing multiple date and time formats and only
 /// quitting if absolutely nothing matches.
-pub fn parse_arg_or_exit(arg: &str, now: &DateTime<Local>) -> DateTime<Local> {
+pub fn parse_arg_or_exit(arg: &str, now: DateTime<Local>) -> DateTime<Local> {
     match try_parse_times(arg, &now)
         .or_else(|_err| try_parse_dates(arg, &now))
         .or_else(|_err| try_parse_datetimes(arg))
