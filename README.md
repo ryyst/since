@@ -8,6 +8,14 @@ Since what?
 1 hours and 30 minutes
 ```
 
+Install with [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
+
+```
+cargo install since
+```
+
+Now you should have the binary in `~/.cargo/bin/since` (on Linux systems).
+
 
 ## Semantic CLI utility for calculating time differences
 
