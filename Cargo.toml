@@ -8,7 +8,7 @@ description = "Small CLI utility to calculate time differences, with semantic UI
 readme = "README.md"
 homepage = "https://github.com/ryyst/since"
 repository = "https://github.com/ryyst/since"
-keywords = ["cli", "time", "date", "datetime", "duration", "difference"]
+keywords = ["cli", "time", "datetime", "duration", "difference"]
 categories = ["command-line-utilities"]
 
 [dependencies]
