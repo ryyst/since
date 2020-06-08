@@ -1,5 +1,8 @@
 mod parsers;
 
+#[cfg(test)]
+mod tests;
+
 use crate::parsers::try_parse_all_formats;
 use chrono::{DateTime, Datelike, Duration, Local, TimeZone};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
