@@ -158,7 +158,7 @@ Now you can find the binary in `./target/release/since`
 
 ## Todo
 
-- Tests
+- Calculation & output tests
 - Improve documentation
 - More accurate year/month calculations
 - A flag for decimal output
