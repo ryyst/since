@@ -89,11 +89,8 @@ fn get_epoch_output(now: DateTime<Local>, filter: Filter) -> String {
         // Thus the following calculations are just "close enough" approximations
         Filter::Years => (1970 - now.year()).abs() as i64,
         Filter::Months => calculate_month_diff(epoch_date, now),
-        Filter::Weeks => {
-            let difference = epoch_date.signed_duration_since(now);
-            difference.num_weeks().abs()
-        }
         // ...and these naive calculations should actually be 100% correct
+        Filter::Weeks => epoch / 60 / 60 / 24 / 7,
         Filter::Days => epoch / 60 / 60 / 24,
         Filter::Hours => epoch / 60 / 60,
         Filter::Minutes => epoch / 60,
