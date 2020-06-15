@@ -1,6 +1,6 @@
 use crate::calculators::{calculate_month_diff, calculate_year_diff};
 use crate::subcommands::Filter;
-use chrono::{DateTime, Datelike, Duration, Local, TimeZone};
+use chrono::{DateTime, Duration, Local, TimeZone};
 
 /// Return the requested time difference filtered according to the chosen subcommand.
 ///
@@ -63,7 +63,7 @@ pub fn get_epoch_output(now: DateTime<Local>, filter: Filter) -> String {
     let output: i64 = match filter {
         // Epoch days are always statically 86400 seconds long.
         // Thus the following calculations are just "close enough" approximations
-        Filter::Years => (1970 - now.year()).abs() as i64,
+        Filter::Years => calculate_year_diff(epoch_date, now),
         Filter::Months => calculate_month_diff(epoch_date, now),
         // ...and these naive calculations should actually be 100% correct
         Filter::Weeks => epoch / 60 / 60 / 24 / 7,
