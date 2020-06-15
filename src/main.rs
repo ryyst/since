@@ -1,22 +1,14 @@
 mod parsers;
+mod subcommands;
 
 #[cfg(test)]
 mod tests;
 
 use crate::parsers::try_parse_all_formats;
+use crate::subcommands::Filter;
 use chrono::{DateTime, Datelike, Duration, Local, TimeZone};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::process;
-
-// Available subcommand branches
-const YEARS: &str = "years";
-const MONTHS: &str = "months";
-const WEEKS: &str = "weeks";
-const DAYS: &str = "days";
-const HOURS: &str = "hours";
-const MINUTES: &str = "minutes";
-const SECONDS: &str = "seconds";
-const BASE: &str = "NOT_SUBCMD";
 
 fn calculate_month_diff(from: DateTime<Local>, to: DateTime<Local>) -> i64 {
     // Individual typecasting is necessary to
@@ -68,50 +60,51 @@ fn get_shorthand_output(
 ///
 /// If no subcommand is chosen, guess which is the best format for humans to read
 /// for the given time range.
-fn get_output(from: DateTime<Local>, to: DateTime<Local>, subcmd: &str) -> String {
+fn get_output(from: DateTime<Local>, to: DateTime<Local>, filter: Filter) -> String {
     let difference = to.signed_duration_since(from);
 
     // NOTE:
     // All values are printed in absolutes, as to not show negative number for values in
     // future. While this is breaking the semantics of `since` a bit, we'll allow it for
     // better usability. You could basically just symlink `since` -> `until`.
-    match subcmd {
-        YEARS => calculate_year_diff(from, to).to_string(),
-        MONTHS => calculate_month_diff(from, to).to_string(),
-        WEEKS => difference.num_weeks().abs().to_string(),
-        DAYS => difference.num_days().abs().to_string(),
-        HOURS => difference.num_hours().abs().to_string(),
-        MINUTES => difference.num_minutes().abs().to_string(),
-        SECONDS => difference.num_seconds().abs().to_string(),
-        _ => get_shorthand_output(from, to, difference),
+    match filter {
+        Filter::Years => calculate_year_diff(from, to).to_string(),
+        Filter::Months => calculate_month_diff(from, to).to_string(),
+        Filter::Weeks => difference.num_weeks().abs().to_string(),
+        Filter::Days => difference.num_days().abs().to_string(),
+        Filter::Hours => difference.num_hours().abs().to_string(),
+        Filter::Minutes => difference.num_minutes().abs().to_string(),
+        Filter::Seconds => difference.num_seconds().abs().to_string(),
+        Filter::None => get_shorthand_output(from, to, difference),
     }
 }
 
 /// Return the UNIX timestamp filtered according to the chosen subcommand.
-fn get_epoch_output(subcmd: &str, now: DateTime<Local>) -> String {
+fn get_epoch_output(now: DateTime<Local>, filter: Filter) -> String {
     let epoch = Local::now().timestamp();
     let epoch_date = Local.ymd(1970, 1, 1).and_hms(0, 0, 0);
 
-    let output: i64 = match subcmd {
+    let output: i64 = match filter {
         // Epoch days are always statically 86400 seconds long.
         // Thus the following calculations are just "close enough" approximations
-        YEARS => (1970 - now.year()).abs() as i64,
-        MONTHS => calculate_month_diff(epoch_date, now),
-        WEEKS => {
+        Filter::Years => (1970 - now.year()).abs() as i64,
+        Filter::Months => calculate_month_diff(epoch_date, now),
+        Filter::Weeks => {
             let difference = epoch_date.signed_duration_since(now);
             difference.num_weeks().abs()
         }
         // ...and these naive calculations should actually be 100% correct
-        DAYS => epoch / 60 / 60 / 24,
-        HOURS => epoch / 60 / 60,
-        MINUTES => epoch / 60,
-        _ => epoch,
+        Filter::Days => epoch / 60 / 60 / 24,
+        Filter::Hours => epoch / 60 / 60,
+        Filter::Minutes => epoch / 60,
+        Filter::Seconds => epoch,
+        Filter::None => epoch,
     };
 
     output.to_string()
 }
 
-fn handle_args(subcmd: &str, matches: &ArgMatches) {
+fn handle_args(filter: Filter, matches: &ArgMatches) {
     let now = Local::now();
 
     let from: DateTime<Local> = match matches.value_of("from") {
@@ -123,7 +116,7 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
             }
         },
         None => {
-            println!("{}", get_epoch_output(subcmd, now));
+            println!("{}", get_epoch_output(now, filter));
             process::exit(0);
         }
     };
@@ -139,7 +132,7 @@ fn handle_args(subcmd: &str, matches: &ArgMatches) {
         None => now,
     };
 
-    println!("{}", get_output(from, to, subcmd));
+    println!("{}", get_output(from, to, filter));
 }
 
 fn main() {
@@ -174,43 +167,43 @@ All values are generally rounded down.";
         .arg(&from)
         .arg(&to)
         .subcommand(
-            SubCommand::with_name(YEARS)
+            SubCommand::with_name(Filter::Years.as_str())
                 .about("Print the output in years (approx)")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(MONTHS)
+            SubCommand::with_name(Filter::Months.as_str())
                 .about("Print the output in months (approx)")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(WEEKS)
+            SubCommand::with_name(Filter::Weeks.as_str())
                 .about("Print the output in weeks (approx)")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(DAYS)
+            SubCommand::with_name(Filter::Days.as_str())
                 .about("Print the output in days")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(HOURS)
+            SubCommand::with_name(Filter::Hours.as_str())
                 .about("Print the output in hours")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(MINUTES)
+            SubCommand::with_name(Filter::Minutes.as_str())
                 .about("Print the output in minutes")
                 .arg(&from)
                 .arg(&to),
         )
         .subcommand(
-            SubCommand::with_name(SECONDS)
+            SubCommand::with_name(Filter::Seconds.as_str())
                 .about("Print the output in seconds")
                 .arg(&from)
                 .arg(&to),
@@ -218,7 +211,7 @@ All values are generally rounded down.";
         .get_matches();
 
     match matches.subcommand() {
-        (subcmd, Some(sub_matches)) => handle_args(subcmd, sub_matches),
-        _ => handle_args(BASE, &matches),
+        (subcmd, Some(sub_matches)) => handle_args(Filter::from_str(subcmd), sub_matches),
+        _ => handle_args(Filter::None, &matches),
     };
 }
