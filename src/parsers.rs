@@ -7,7 +7,7 @@ pub fn try_parse_all_formats(
     now: DateTime<Local>,
 ) -> Result<DateTime<Local>, ParseError> {
     try_parse_times(arg, &now)
-        .or_else(|_err| try_parse_dates(arg, &now))
+        .or_else(|_err| try_parse_dates(arg))
         .or_else(|_err| try_parse_datetimes(arg))
 }
 
@@ -25,9 +25,8 @@ fn try_parse_times(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, 
         })
 }
 
-/// Tries to parse given argument through multiple different date formats and create a locale-aware
-/// current datetime using the provided `now`.
-fn try_parse_dates(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, ParseError> {
+/// Tries to parse given argument through multiple different date formats and set the time to 00:00.
+fn try_parse_dates(arg: &str) -> Result<DateTime<Local>, ParseError> {
     // Try to go through the formats in the order of (entirely subjective) "commonness"
     NaiveDate::parse_from_str(&arg, "%Y-%m-%d")
         .or_else(|_err| NaiveDate::parse_from_str(&arg, "%Y/%m/%d"))
@@ -38,11 +37,9 @@ fn try_parse_dates(arg: &str, now: &DateTime<Local>) -> Result<DateTime<Local>, 
         .or_else(|_err| NaiveDate::parse_from_str(&arg, "%Y %B %d")) // %B == July || Jul
         .or_else(|_err| NaiveDate::parse_from_str(&arg, "%d %B %Y"))
         .and_then(|val| {
-            Ok(Local.ymd(val.year(), val.month(), val.day()).and_hms(
-                now.hour(),
-                now.minute(),
-                now.second(),
-            ))
+            Ok(Local
+                .ymd(val.year(), val.month(), val.day())
+                .and_hms(0, 0, 0))
         })
 }
 
